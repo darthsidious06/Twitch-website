@@ -53,12 +53,13 @@
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[85vh] min-h-[600px] mb-16">
             
             <!-- Video Player (3/4 width) -->
-            <div class="lg:col-span-3 bg-black rounded-xl overflow-hidden shadow-2xl border border-[#2d2d30] relative group z-10">
-                <div id="twitch-embed" class="w-full h-full"></div>
-                <!-- Loading State -->
+            <div class="lg:col-span-3 bg-black rounded-xl overflow-hidden shadow-2xl border border-[#2d2d30] relative group">
+                <!-- Loading State (Now positioned behind the video player) -->
                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0 bg-[#0e0e10]">
                     <span class="text-purple-500 animate-pulse font-mono">Connecting to Solar_0613...</span>
                 </div>
+                <!-- Video Player Container (z-10 ensures it sits ON TOP of the loading text) -->
+                <div id="twitch-embed" class="w-full h-full relative z-10"></div>
             </div>
 
             <!-- Chat (1/4 width) -->
@@ -153,20 +154,26 @@
         // Initialize Icons
         lucide.createIcons();
 
+        // Calculate allowed parents (Includes current hostname to allow previewing)
+        const currentHost = window.location.hostname;
+        const parents = [domain];
+        if (currentHost && currentHost !== domain && currentHost !== 'localhost') {
+            parents.push(currentHost);
+        }
+
         // Initialize Twitch Player
         // Documentation: https://dev.twitch.tv/docs/embed/video-and-clips/
         new Twitch.Embed("twitch-embed", {
             width: "100%",
             height: "100%",
             channel: channelName,
-            parent: [domain], // MUST match the URL the site is hosted on
+            parent: parents, // Dynamically includes current host for previews
             layout: "video",
             autoplay: true,
             muted: false
         });
 
-        // The chat iframe is handled via HTML src attribute, 
-        // but we can enforce updates here if needed.
+        // The chat iframe is handled via HTML src attribute.
     </script>
 </body>
 </html>
