@@ -66,7 +66,7 @@
             <div class="lg:col-span-1 bg-[#18181b] rounded-xl border border-[#2d2d30] hidden lg:block overflow-hidden shadow-xl">
                 <iframe 
                     id="twitch-chat-embed"
-                    src="https://www.twitch.tv/embed/solar_0613/chat?parent=alexspinks.dev&darkpopout"
+                    src=""
                     height="100%"
                     width="100%"
                     class="w-full h-full border-0">
@@ -155,14 +155,14 @@
         lucide.createIcons();
 
         // Calculate allowed parents (Includes current hostname to allow previewing)
+        // Twitch requires the exact domain displaying the embed to be in the "parent" list
         const currentHost = window.location.hostname;
         const parents = [domain];
-        if (currentHost && currentHost !== domain && currentHost !== 'localhost') {
+        if (currentHost && currentHost !== domain && currentHost !== 'localhost' && currentHost !== '') {
             parents.push(currentHost);
         }
 
         // Initialize Twitch Player
-        // Documentation: https://dev.twitch.tv/docs/embed/video-and-clips/
         new Twitch.Embed("twitch-embed", {
             width: "100%",
             height: "100%",
@@ -173,7 +173,18 @@
             muted: false
         });
 
-        // The chat iframe is handled via HTML src attribute.
+        // Initialize Chat Iframe Manually to handle multiple parents
+        // We construct the URL manually to add multiple "parent" query parameters
+        const chatIframe = document.getElementById('twitch-chat-embed');
+        let chatSrc = `https://www.twitch.tv/embed/${channelName}/chat?darkpopout=true`;
+        
+        // Add each parent to the URL string (e.g. &parent=site.com&parent=preview.com)
+        parents.forEach(p => {
+            chatSrc += `&parent=${p}`;
+        });
+
+        // Set the src to load the chat
+        chatIframe.src = chatSrc;
     </script>
 </body>
 </html>
