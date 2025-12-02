@@ -54,22 +54,31 @@
             
             <!-- Video Player (3/4 width) -->
             <div class="lg:col-span-3 bg-black rounded-xl overflow-hidden shadow-2xl border border-[#2d2d30] relative group">
-                <!-- Loading State (Now positioned behind the video player) -->
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0 bg-[#0e0e10]">
-                    <span class="text-purple-500 animate-pulse font-mono">Connecting to Solar_0613...</span>
+                <!-- Loading State (Now with ID for removal) -->
+                <div id="stream-loading" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-0 bg-[#0e0e10]">
+                    <span class="text-purple-500 animate-pulse font-mono mb-2">Connecting to Solar_0613...</span>
+                    <span class="text-gray-600 text-xs">If this takes too long, check your browser privacy settings.</span>
                 </div>
-                <!-- Video Player Container (z-10 ensures it sits ON TOP of the loading text) -->
+                <!-- Video Player Container -->
                 <div id="twitch-embed" class="w-full h-full relative z-10"></div>
             </div>
 
             <!-- Chat (1/4 width) -->
-            <div class="lg:col-span-1 bg-[#18181b] rounded-xl border border-[#2d2d30] hidden lg:block overflow-hidden shadow-xl">
+            <div class="lg:col-span-1 bg-[#18181b] rounded-xl border border-[#2d2d30] hidden lg:block overflow-hidden shadow-xl relative">
+                <!-- Chat Fallback/Info -->
+                <div class="absolute inset-0 flex items-center justify-center z-0 p-4 text-center">
+                    <div class="text-xs text-gray-500">
+                        <p class="mb-2">Chat loading...</p>
+                        <p>If using Firefox/Brave, disable "Shields" for this site or open chat externally.</p>
+                        <a href="https://www.twitch.tv/popout/solar_0613/chat" target="_blank" class="text-purple-400 underline mt-2 block">Open Chat Popup</a>
+                    </div>
+                </div>
                 <iframe 
                     id="twitch-chat-embed"
                     src=""
                     height="100%"
                     width="100%"
-                    class="w-full h-full border-0">
+                    class="w-full h-full border-0 relative z-10 bg-transparent">
                 </iframe>
             </div>
         </div>
@@ -154,8 +163,7 @@
         // Initialize Icons
         lucide.createIcons();
 
-        // Calculate allowed parents (Includes current hostname to allow previewing)
-        // Twitch requires the exact domain displaying the embed to be in the "parent" list
+        // Calculate allowed parents
         const currentHost = window.location.hostname;
         const parents = [domain];
         if (currentHost && currentHost !== domain && currentHost !== 'localhost' && currentHost !== '') {
@@ -163,28 +171,36 @@
         }
 
         // Initialize Twitch Player
-        new Twitch.Embed("twitch-embed", {
+        const embed = new Twitch.Embed("twitch-embed", {
             width: "100%",
             height: "100%",
             channel: channelName,
-            parent: parents, // Dynamically includes current host for previews
+            parent: parents,
             layout: "video",
             autoplay: true,
             muted: false
         });
 
-        // Initialize Chat Iframe Manually to handle multiple parents
-        // We construct the URL manually to add multiple "parent" query parameters
+        // Event Listener: Hide loading text when player is ready
+        embed.addEventListener(Twitch.Embed.VIDEO_READY, () => {
+            console.log("Twitch Player Ready");
+            const loader = document.getElementById('stream-loading');
+            if (loader) loader.style.display = 'none';
+        });
+
+        // Initialize Chat Iframe
         const chatIframe = document.getElementById('twitch-chat-embed');
         let chatSrc = `https://www.twitch.tv/embed/${channelName}/chat?darkpopout=true`;
-        
-        // Add each parent to the URL string (e.g. &parent=site.com&parent=preview.com)
         parents.forEach(p => {
             chatSrc += `&parent=${p}`;
         });
-
-        // Set the src to load the chat
         chatIframe.src = chatSrc;
+
+        // Fallback: If player takes > 3 seconds, try to hide loader anyway so user can see if there is an error message
+        setTimeout(() => {
+             const loader = document.getElementById('stream-loading');
+             if (loader) loader.style.display = 'none';
+        }, 5000);
     </script>
 </body>
 </html>
